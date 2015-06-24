@@ -1,5 +1,7 @@
 *
 !*.*
+!Makefile
 *.o
 *.ko
 *.so
+*.out
