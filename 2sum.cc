@@ -1,3 +1,6 @@
+// given a vector<int> and a int t
+// find 2 indices of numbers whose sum of their values equals to t
+// nlgn
 #include <iostream>
 #include <vector>
 #include <algorithm>
@@ -12,37 +15,38 @@ bool comp(const struct me& a, const struct me& b){
   return a.val < b.val;
 }
 
-typedef vector<struct me>::iterator mei;
-mei binary_find(mei beg, mei end, int val){
-  struct me a = {0, val};
-  mei i = lower_bound(beg, end, a, comp);
-  if(i!=end && val<i->val) return i;
-  else return end;
-}
-
 vector<int> twoSum(vector<int>&s, int t){
   vector<struct me> tmp;
-  vector<int> res;
+  vector<int> res = {0, 0};
   for(int i=0; i<s.size(); ++i){
     struct me a = {i, s[i]};
     tmp.push_back(move(a));
   }
   sort(tmp.begin(), tmp.end(), comp);
-  for(struct me a:tmp){
-    auto b = binary_find(tmp.begin(), tmp.end(), t-a.val);
-    if(b!=tmp.end()){
-      if(a.idx<b->idx)
-        res.push_back(a.idx+1);
-      res.push_back(b->idx+1);
+  int sum;
+  for(int i=0, j=tmp.size()-1; i<j;){
+    sum = tmp[i].val+tmp[j].val;
+    if(sum>t) --j;
+    else if(sum<t) ++i;
+    else{
+      if(tmp[i].idx<tmp[j].idx){
+        res[0] = tmp[i].idx+1;
+        res[1] = tmp[j].idx+1;
+      }
+      else{
+        res[0] = tmp[j].idx+1;
+        res[1] = tmp[i].idx+1;
+      }
       break;
     }
   }
+
   return move(res);
 }
 
 int main(){
-  vector<int> s = {2,7,11,15};
-  vector<int> a = twoSum(s, 9);
+  vector<int> s = {3,2,4,15};
+  vector<int> a = twoSum(s, 6);
   for(int i:a) cout << i << "\n";
   return 0;
 }
