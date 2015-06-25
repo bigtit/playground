@@ -39,22 +39,27 @@ int main(int argc, char** argv){
   nlh->nlmsg_type = NLMSG_NOOP;
   nlh->nlmsg_flags = 0;
 
-  strcpy(NLMSG_DATA(nlh), argv[1]);
+  strcpy(NLMSG_DATA(nlh), argv[0]);
 
+  /*
   memset(&iov, 0, sizeof(iov));
   iov.iov_base = (void*)nlh;
   iov.iov_len = nlh->nlmsg_len;
   memset(&msg, 0, sizeof(msg));
   msg.msg_iov = &iov;
   msg.msg_iovlen = 1;
+  */
 
   printf("sending msg to kernel\n");
-  sendmsg(sock_fd, &msg, 0);
+  // sendmsg(sock_fd, &msg, 0);
+  sendto(sock_fd, nlh, NLMSG_LENGTH(MAX_PAYLOAD), 0, (struct sockaddr*)&dest_addr, sizeof(dest_addr));
 
   // wait to recv msg from kernel
   printf("waiting msg from kernel\n");
-  memset((char*)NLMSG_DATA(nlh), 0, 1024);
-  recvmsg(sock_fd, &msg, 0);
+  // memset((char*)NLMSG_DATA(nlh), 0, 1024);
+  memset(nlh, 0, MAX_PAYLOAD);
+  // recvmsg(sock_fd, &msg, 0);
+  recvfrom(sock_fd, nlh, NLMSG_LENGTH(MAX_PAYLOAD), 0, (struct sockaddr*)&dest_addr, 0);
   printf("got response: %s", NLMSG_DATA(nlh));
 
   close(sock_fd);
