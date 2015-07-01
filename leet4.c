@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 double median(int* s, int n){
   if(n&1) return s[n/2];
@@ -19,7 +20,8 @@ int* bmerge(int* s1, int n1, int* s2, int n2){
   int m2 = median(s2, n2);
   if(m1>m2) return bmerge(s2, n2, s1, n1);
   int* tmp = (int*)malloc(sizeof(int)*(n1+n2));
-  if(s2[n2-1]<=s1[n1-1])
+  if(s2[n2-1]<=s1[n1-1]) return tmp;
+  return tmp;
 }
 
 double medians(int* s1, int n1, int* s2, int n2){
@@ -27,7 +29,7 @@ double medians(int* s1, int n1, int* s2, int n2){
   else if(!n2) return median(s1, n1);
   int m1 = median(s1, n1);
   int m2 = median(s2, n2);
-  if(m1<m2){}
+  if(m1<m2){return 0;}
   else if(m1>m2) return medians(s2, n2, s1, n1);
   else return m1;
 }
