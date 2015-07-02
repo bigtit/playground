@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <string.h>
 
 int main(){
   int fd, size;
