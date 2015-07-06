@@ -6,11 +6,11 @@ double median(int* s, int n){
   else return (s[n/2]+s[n/2+1])/2;
 }
 
-int bsearch(int* a, int len, int x){
+int bbsearch(int* a, int len, int x){
   if(len<=0) return -1;
   if(a[len/2]==x) return len/2;
-  if(a[len/2]>x) return bsearch(a, len/2, x);
-  else return len/2+1+bsearch(a+len/2, len/2, x);
+  if(a[len/2]>x) return bbsearch(a, len/2, x);
+  else return len/2+1+bbsearch(a+len/2, len/2, x);
 }
 
 int* bmerge(int* s1, int n1, int* s2, int n2){
