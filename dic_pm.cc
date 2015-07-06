@@ -3,8 +3,7 @@
 #include <vector>
 using namespace std;
 
-int next_perm(vector<int>& c)
-{
+int next_perm(vector<int>& c){
   int i = c.size()-1;
   int j = i+1;
   while(i-- && c[i]>c[i+1]);
@@ -15,8 +14,7 @@ int next_perm(vector<int>& c)
   return 0;
 }
 
-bool isdsp(vector<int>& c)
-{
+bool isdsp(vector<int>& c){
   auto it = c.begin();
   int i = 0;
   while(it!=c.end() && *it!=i++) ++it;
@@ -24,8 +22,7 @@ bool isdsp(vector<int>& c)
   return false;
 }
 
-int mindsp(vector<int>& c)
-{
+int mindsp(vector<int>& c){
   sort(c.begin(), c.end());
   vector<int>::size_type i = 0;
   while(i<c.size()-1){
@@ -35,8 +32,7 @@ int mindsp(vector<int>& c)
   if(c.size()/2) swap(c[i-1], c[i]);
   return 0;
 }
-int maxdsp(vector<int>& c)
-{
+int maxdsp(vector<int>& c){
   sort(c.begin(), c.end(), [](int x, int y)->bool{return x>y;});
   if(c.size()/2) swap(c[c.size()/2], c[c.size()/2+1]);
   return 0;
@@ -47,14 +43,11 @@ int nextdsp(vector<int>& c){
   return 0;
 }
 
-int main(int argc, char** argv)
-{
+int main(){
   vector<int> c = {0,1,2,3,4,5};
-  bool is;
   while(!next_perm(c)){
-    is = isdsp(c);
     //cout << is << "|";
-    cout << is;
+    cout << isdsp(c);
     //for(int j=0; j<c.size(); ++j) cout << c[j];
     //for(int i:c) cout << i;
     //cout << endl;
