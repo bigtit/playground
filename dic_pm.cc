@@ -3,11 +3,12 @@
 #include <vector>
 using namespace std;
 
-int dic(vector<int>& c)
+int next_perm(vector<int>& c)
 {
-  int i = c.size()-1, j = c.size();
+  int i = c.size()-1;
+  int j = i+1;
   while(i-- && c[i]>c[i+1]);
-  if(i<0) return 1;
+  if(i<0) return 1; // termination condition: descending orde
   while(--j>i && c[i]>c[j]);
   swap(c[i], c[j]);
   reverse(c.begin()+i+1, c.end());
@@ -42,32 +43,22 @@ int maxdsp(vector<int>& c)
 }
 
 int nextdsp(vector<int>& c){
-  //
+  next_perm(c);
+  return 0;
 }
 
-int main()
+int main(int argc, char** argv)
 {
-  int c0[] = {0,1,2,3,4,5,6};
-  vector<int> c (c0, c0+6);
-  int c1 = 1, c2 = 0;
+  vector<int> c = {0,1,2,3,4,5};
   bool is;
-  while(!dic(c)){
-    ++c1;
+  while(!next_perm(c)){
     is = isdsp(c);
-    c2 += is;
-    cout << is << "|";
-    for(int j=0; j<c.size(); ++j) cout << c[j];
-    cout << endl;
+    //cout << is << "|";
+    cout << is;
+    //for(int j=0; j<c.size(); ++j) cout << c[j];
+    //for(int i:c) cout << i;
+    //cout << endl;
   }
-  cout << c1 << endl;
-  cout << c2 << endl;
-  mindsp(c);
-  cout << "minimal dislocation permutation: ";
-  for(int i=0; i<c.size(); ++i) cout << c[i];
-  cout << endl;
-  maxdsp(c);
-  cout << "maximal dislocation permutation: ";
-  for(int i=0; i<c.size(); ++i) cout << c[i];
-  cout << endl;
+
   return 0;
 }
