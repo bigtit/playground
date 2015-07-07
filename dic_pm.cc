@@ -44,13 +44,9 @@ int nextdsp(vector<int>& c){
 }
 
 int main(){
-  vector<int> c = {0,1,2,3,4,5};
+  vector<int> c = {0,1,2,3,4,5,6};
   while(!next_perm(c)){
-    //cout << is << "|";
-    cout << isdsp(c);
-    //for(int j=0; j<c.size(); ++j) cout << c[j];
-    //for(int i:c) cout << i;
-    //cout << endl;
+    cout << (isdsp(c)?'*':'_');
   }
 
   return 0;
