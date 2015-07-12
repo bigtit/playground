@@ -14,6 +14,7 @@ int main(){
   int control_sock, data_sock;
   struct hostent* hp;
   struct sockaddr_in server;
+  struct sockaddr_in serverd; // addr for server data
   memset(&server, 0, sizeof(server));
 
   char read_buf[256];
@@ -41,8 +42,10 @@ int main(){
   // passive mode means using port given by server to connect to data channel
   // set up data_sock using read_buf
   data_sock = socket(AF_NETLINK, SOCK_STREAM, 0);
+  memcpy(&serverd, &server, sizeof(server));
+  serverd.sin_port = (read_buf[strlen(read_buf)-2]<<8) + read_buf[strlen(read_buf)-1];
 
-  connect(data_sock, (struct sockaddr*)&server, sizeof(server));
+  connect(data_sock, (struct sockaddr*)&serverd, sizeof(server));
   sprintf(send_buf, "CWD %s\r\n", dir_name); // tell server to use passive mode
   write(control_sock, send_buf, strlen(send_buf)); // write pass
   read(control_sock, read_buf, read_len);
