@@ -2,7 +2,7 @@
 #include <set>
 #include <map>
 
-typedef struct kkk{
+typedef struct{
   char sk;
   int itv;
   int timer; // should be uint
