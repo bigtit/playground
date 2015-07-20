@@ -27,7 +27,7 @@ int main(){
     }
   }
   // holding mode
-  if(ktbl.find(vk)!=ktbl.end()){
+  else if(ktbl.find(vk)!=ktbl.end()){
     if(kup && ktbl[vk].timer){} // kill timer
     else if(kdn && !ktbl[vk].timer){} // create a timer
   }
@@ -35,6 +35,7 @@ int main(){
 }
 
 // add a group of key
+// replace the sethk func
 int addk(char k, char sk, int itv){
   if(ktbl.find(k)!=ktbl.end()) return 1; // key already exist
   ktbl.insert(std::pair<char, kkk>(k, {sk, itv, 0}));
@@ -43,7 +44,7 @@ int addk(char k, char sk, int itv){
 }
 
 int rmk(char k){
-  if(ktbl.find(k)==ktbl.end()) return 1;
+  if(ktbl.find(k)==ktbl.end()) return 1; // no key found
   sktbl[ktbl[k].sk].erase(k);
   ktbl.erase(k);
   return 0;
