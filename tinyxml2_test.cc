@@ -1,3 +1,4 @@
+// g++ -o a.out tinyxml2_test.cc tinyxml2.h tinyxml2.cpp -std=c++11
 #include <iostream>
 #include <fstream>
 #include <set>
@@ -20,8 +21,8 @@ typedef struct{
 map<char, kkk> kt;
 map<char, set<char>> skt;
 
-void read_cfg(std::string&);
-void write_cfg(std::string&);
+void read_cfg(const std::string&);
+void write_cfg(const std::string&);
 
 int main(){
   std::string fin = "config.xml", fout = "config2.xml";
@@ -30,7 +31,7 @@ int main(){
   return 0;
 }
 
-void read_cfg(std::string& fname){
+void read_cfg(const std::string& fname){
   XMLDocument doc;
   doc.LoadFile(fname.c_str());
   auto cfg = doc.RootElement();
@@ -50,7 +51,7 @@ void read_cfg(std::string& fname){
   }
 }
 
-void write_cfg(std::string& fname){
+void write_cfg(const std::string& fname){
   XMLDocument doc;
   auto dec = doc.NewDeclaration();
   doc.InsertFirstChild(dec);
