@@ -8,8 +8,8 @@ using size_t = unsigned int;
 
 size_t char_count(const char a, const string& s){
   size_t c = 0;
-  for(size_t i=0; i<s.length(); ++i)
-    c += (a==s[i]?1:0);
+  for(auto i:s)
+    c += (a==i?1:0);
   return c;
 }
 
