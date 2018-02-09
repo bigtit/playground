@@ -16,7 +16,7 @@ public:
 
 // input n: seq number 0 to n-1
 // return the num inside ccq
-int binary_check(check_seq ccq, int n) {
+int binary_check(cosnt check_seq& ccq, int n) {
   if(!ccq(n)) return -1;
   int i = 0, j = 0, m = n; // offset
   // need round
