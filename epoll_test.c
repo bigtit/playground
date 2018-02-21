@@ -28,7 +28,7 @@ int main(){
 
   // epoll vars
   ev.data.fd = msock;
-  ev.events = EPOLLIN|EPOLLET;
+  ev.events = EPOLLIN|EPOLLIN; // listen_fd should be level triggered
   epoll_ctl(epfd, EPOLL_CTL_ADD, msock, &ev);
 
   bind(msock, (struct sockaddr*)&addr, sizeof(addr));
