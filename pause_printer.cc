@@ -4,7 +4,6 @@
 #include <string>
 #include <iostream>
 #include <thread>
-#include <deque>
 
 // enumerate all printers in host and add their name to ls
 void enum_printers(std::vector<std::string>& pnls) {
@@ -34,8 +33,8 @@ public:
   job_t& operator=(const job_t&) = delete;
 };
 
-void test_thread(HANDLE lp) {
-  std::cout << "hello my name is: " << lp << std::endl;
+void test_thread(HANDLE lp, const std::string& pn) {
+  std::cout << "hello: " << pn << std::endl;
   PPRINTER_NOTIFY_INFO pni = NULL;
   unsigned short fs = JOB_NOTIFY_FIELD_STATUS;
   PRINTER_NOTIFY_OPTIONS_TYPE pnot;
@@ -49,9 +48,9 @@ void test_thread(HANDLE lp) {
   pno.pTypes = &pnot;
 
   HANDLE notify = FindFirstPrinterChangeNotification(lp, PRINTER_CHANGE_JOB /*&(~PRINTER_CHANGE_SET_JOB)*/, 0, &pno);
-  DWORD reason, jid, jstat = 0;
 
   for (;;) {
+    DWORD reason, jid, jstat = 0;
     WaitForSingleObjectEx(notify, INFINITE, TRUE);
     FindNextPrinterChangeNotification(notify, &reason, &pno, (void**)&pni);
     // std::cout << "pni->Count: " << pni->Count << std::endl;
@@ -66,12 +65,19 @@ void test_thread(HANDLE lp) {
       }
     }
     if (reason & PRINTER_CHANGE_ADD_JOB) {
-      std::cout << "addjob\n";
+      std::cout << pn << ": addjob\n";
       SetJob(lp, jid, 0, NULL, JOB_CONTROL_PAUSE);
+    }
+    if (reason & PRINTER_CHANGE_DELETE_JOB) {
+      std::cout << pn << ": deletejob\n";
     }
     if (reason & PRINTER_CHANGE_SET_JOB) {
       if (jstat == JOB_STATUS_PAUSED);
-      if (jstat & JOB_STATUS_PRINTING) SetJob(lp, jid, 0, NULL, JOB_CONTROL_DELETE);
+      // when printing, set it to JOB_CONTROL_PAUSE cannot pause the job
+      // but we can delete it directly
+      if (jstat & JOB_STATUS_PRINTING) {
+        SetJob(lp, jid, 0, NULL, JOB_CONTROL_DELETE);
+      }
     }
     if (reason & PRINTER_CHANGE_DELETE_JOB);
   }
@@ -84,10 +90,11 @@ int main() {
   enum_printers(ps);
 
   for (auto& p : ps) {
+    if (p.find("Fax") != std::string::npos) continue;
     HANDLE lp;
     OpenPrinter(const_cast<LPSTR>(p.c_str()), &lp, NULL);
     lps.push_back(lp);
-    ts.push_back(std::thread(test_thread, lp));
+    ts.push_back(std::thread(test_thread, lp, p));
   }
   for (auto& t : ts) t.join();
   for (auto lp : lps) ClosePrinter(lp);
