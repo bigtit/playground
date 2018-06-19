@@ -20,7 +20,22 @@ void enum_printers(std::vector<std::string>& pnls) {
   }
 }
 
+class task_t {
+};
+
+class job_t {
+  enum job_stat { initialized, paused, resumed, canceled };
+  HANDLE _p; // printer
+  HANDLE _id; // job id
+  job_stat _stat; // job status
+public:
+  job_t() = delete;
+  job_t(const job_t&) = delete;
+  job_t& operator=(const job_t&) = delete;
+};
+
 void test_thread(HANDLE lp) {
+  std::cout << "hello my name is: " << lp << std::endl;
   PPRINTER_NOTIFY_INFO pni = NULL;
   unsigned short fs = JOB_NOTIFY_FIELD_STATUS;
   PRINTER_NOTIFY_OPTIONS_TYPE pnot;
@@ -33,48 +48,32 @@ void test_thread(HANDLE lp) {
   pno.Count = 1;
   pno.pTypes = &pnot;
 
-  HANDLE notify = FindFirstPrinterChangeNotification(lp, PRINTER_CHANGE_ALL, 0, &pno);
-  DWORD reason, jid, jstat;
-
-  bool prep = true;
+  HANDLE notify = FindFirstPrinterChangeNotification(lp, PRINTER_CHANGE_JOB /*&(~PRINTER_CHANGE_SET_JOB)*/, 0, &pno);
+  DWORD reason, jid, jstat = 0;
 
   for (;;) {
-    WaitForSingleObject(notify, INFINITE);
+    WaitForSingleObjectEx(notify, INFINITE, TRUE);
     FindNextPrinterChangeNotification(notify, &reason, &pno, (void**)&pni);
+    // std::cout << "pni->Count: " << pni->Count << std::endl;
+    // std::cout << "reason: " << reason;
     if (pni) {
-      if (pni->Flags & PRINTER_NOTIFY_INFO_DISCARDED) {
-        DWORD old_flag = pni->Flags;
-        pno.Flags = PRINTER_NOTIFY_OPTIONS_REFRESH;
-        FreePrinterNotifyInfo(pni);
-        FindNextPrinterChangeNotification(notify, &reason, &pno, (void**)&pni);
-        pno.Flags = old_flag;
-      }
       for (DWORD i = 0; i < pni->Count; ++i) {
         if (pni->aData[i].Type != JOB_NOTIFY_TYPE) continue;
         jid = pni->aData[i].Id;
-        if (pni->aData[i].Field == JOB_NOTIFY_FIELD_STATUS)
+        if (pni->aData[i].Field == JOB_NOTIFY_FIELD_STATUS) {
           jstat = pni->aData[i].NotifyData.adwData[0];
+        }
       }
     }
     if (reason & PRINTER_CHANGE_ADD_JOB) {
+      std::cout << "addjob\n";
       SetJob(lp, jid, 0, NULL, JOB_CONTROL_PAUSE);
-      prep = false;
     }
     if (reason & PRINTER_CHANGE_SET_JOB) {
-      if (jstat & JOB_STATUS_PRINTING) {
-        SetJob(lp, jid, 0, NULL, JOB_CONTROL_PAUSE);
-        prep = false;
-      }
+      if (jstat == JOB_STATUS_PAUSED);
+      if (jstat & JOB_STATUS_PRINTING) SetJob(lp, jid, 0, NULL, JOB_CONTROL_DELETE);
     }
-    if (!prep) {
-      auto fd = pni->aData[0].Field;
-      std::cout << fd << std::endl;
-      if (fd == JOB_NOTIFY_FIELD_STATUS) {
-        std::cout << "  " << jstat << std::endl;
-        if (jstat & JOB_STATUS_PAUSED )
-          SetJob(lp, jid, 0, NULL, JOB_CONTROL_PAUSE);
-      }
-    }
+    if (reason & PRINTER_CHANGE_DELETE_JOB);
   }
 }
 
@@ -83,7 +82,7 @@ int main() {
   std::vector<std::thread> ts;
   std::vector<HANDLE> lps;
   enum_printers(ps);
-  
+
   for (auto& p : ps) {
     HANDLE lp;
     OpenPrinter(const_cast<LPSTR>(p.c_str()), &lp, NULL);
@@ -91,6 +90,6 @@ int main() {
     ts.push_back(std::thread(test_thread, lp));
   }
   for (auto& t : ts) t.join();
-  for (auto& lp : lps) ClosePrinter(lp);
+  for (auto lp : lps) ClosePrinter(lp);
   return 0;
 }
