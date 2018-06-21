@@ -48,7 +48,8 @@ void mux_thread(const std::vector<struct printer>& pls) {
   ///////////////////////////
   // std::vector<HANDLE> nots;
   auto ps = pls.size();
-  auto nots = new HANDLE[ps];
+  // auto nots = new HANDLE[ps];
+  HANDLE nots[255];
   for (size_t i = 0; i < ps; ++i) {
     // nots.push_back(FindFirstPrinterChangeNotification(p.hdl, PRINTER_CHANGE_JOB, 0, &pno));
     nots[i] = FindFirstPrinterChangeNotification(pls[i].hdl, PRINTER_CHANGE_JOB, 0, &pno);
