@@ -33,6 +33,12 @@ public:
   job_t& operator=(const job_t&) = delete;
 };
 
+struct jjob {
+  DWORD id;
+  DWORD stat;
+  bool deleted;
+};
+
 void test_thread(HANDLE lp, const std::string& pn) {
   std::cout << "hello: " << pn << std::endl;
   PPRINTER_NOTIFY_INFO pni = NULL;
@@ -48,6 +54,7 @@ void test_thread(HANDLE lp, const std::string& pn) {
   pno.pTypes = &pnot;
 
   HANDLE notify = FindFirstPrinterChangeNotification(lp, PRINTER_CHANGE_JOB /*&(~PRINTER_CHANGE_SET_JOB)*/, 0, &pno);
+  std::vector<jjob> jj;
 
   for (;;) {
     DWORD reason, jid, jstat = 0;
@@ -61,25 +68,36 @@ void test_thread(HANDLE lp, const std::string& pn) {
         jid = pni->aData[i].Id;
         if (pni->aData[i].Field == JOB_NOTIFY_FIELD_STATUS) {
           jstat = pni->aData[i].NotifyData.adwData[0];
+          jj.push_back({ jid, jstat, false });
         }
       }
     }
+
     if (reason & PRINTER_CHANGE_ADD_JOB) {
       std::cout << pn << ": addjob\n";
       SetJob(lp, jid, 0, NULL, JOB_CONTROL_PAUSE);
+      // dealing with job adding
     }
     if (reason & PRINTER_CHANGE_DELETE_JOB) {
       std::cout << pn << ": deletejob\n";
     }
     if (reason & PRINTER_CHANGE_SET_JOB) {
-      if (jstat == JOB_STATUS_PAUSED);
-      // when printing, set it to JOB_CONTROL_PAUSE cannot pause the job
-      // but we can delete it directly
-      if (jstat & JOB_STATUS_PRINTING) {
-        SetJob(lp, jid, 0, NULL, JOB_CONTROL_DELETE);
+      for (auto& j : jj) {
+        // std::cout << "jid = " << j.id << ", jstat = " << j.stat << ", deleted = " << j.deleted << std::endl;
+        if (j.stat == JOB_STATUS_PAUSED);
+        // when printing, set it to JOB_CONTROL_PAUSE cannot pause the job
+        // but we can delete it directly
+        if ((j.stat & JOB_STATUS_PRINTING || j.stat == 0)) {
+          // too late to pause when printing
+          // std::cout << "Forbidden operation\n";
+          if (SetJob(lp, j.id, 0, NULL, JOB_CONTROL_DELETE)) {
+            std::cout << "deleted jobid = " << j.id << std::endl;
+            // MessageBox(0, "forbidden operation", "error", 0);
+            // dealing with deletion of a job
+          }
+        }
       }
     }
-    if (reason & PRINTER_CHANGE_DELETE_JOB);
   }
 }
 
