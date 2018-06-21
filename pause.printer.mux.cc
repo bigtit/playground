@@ -28,6 +28,7 @@ auto enum_printers2() {
     pls.push_back({ (HANDLE)0, pi->pName });
     ++pi;
   }
+  delete buf;
   return std::move(pls);
 }
 
