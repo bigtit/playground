@@ -8,7 +8,6 @@
 struct jjob {
   DWORD id;
   DWORD stat;
-  bool deleted;
 };
 
 struct printer {
@@ -17,8 +16,9 @@ struct printer {
 };
 
 // enumerate all printers in host and add their name to ls
-void enum_printers2(std::vector<struct printer>& pls) {
+auto enum_printers2() {
   DWORD nd, ret;
+  std::vector<struct printer> pls;
   EnumPrinters(PRINTER_ENUM_LOCAL | PRINTER_ENUM_CONNECTIONS, NULL, 1, NULL, 0, &nd, &ret);
   LPBYTE buf = new BYTE[nd];
   EnumPrinters(PRINTER_ENUM_LOCAL | PRINTER_ENUM_CONNECTIONS, NULL, 1, buf, nd, &nd, &ret);
@@ -28,6 +28,7 @@ void enum_printers2(std::vector<struct printer>& pls) {
     pls.push_back({ (HANDLE)0, pi->pName });
     ++pi;
   }
+  return std::move(pls);
 }
 
 void mux_thread(const std::vector<struct printer>& pls) {
@@ -51,10 +52,11 @@ void mux_thread(const std::vector<struct printer>& pls) {
     // nots.push_back(FindFirstPrinterChangeNotification(p.hdl, PRINTER_CHANGE_JOB, 0, &pno));
     nots[i] = FindFirstPrinterChangeNotification(pls[i].hdl, PRINTER_CHANGE_JOB, 0, &pno);
   }
-  std::vector<jjob> jj;
+  // std::vector<jjob> jj;
 
   for (;;) {
     DWORD reason, jid, jstat = 0;
+    std::vector<jjob> jj;
     // WaitForSingleObjectEx(notify, INFINITE, TRUE);
     DWORD idx = WaitForMultipleObjectsEx(ps, nots, FALSE, INFINITE, TRUE);
     HANDLE notify = nots[idx];
@@ -67,7 +69,7 @@ void mux_thread(const std::vector<struct printer>& pls) {
         jid = pni->aData[i].Id;
         if (pni->aData[i].Field == JOB_NOTIFY_FIELD_STATUS) {
           jstat = pni->aData[i].NotifyData.adwData[0];
-          jj.push_back({ jid, jstat, false });
+          jj.push_back({ jid, jstat });
         }
       }
     }
@@ -92,7 +94,7 @@ void mux_thread(const std::vector<struct printer>& pls) {
           if (SetJob(pls[idx].hdl, j.id, 0, NULL, JOB_CONTROL_DELETE)) {
             std::cout << "deleted jobid = " << j.id << std::endl;
             MessageBox(0, "forbidden operation, delete current job", "error", 0);
-            // dealing with deletion of a job
+            // dealing with job deletion
           }
         }
       }
@@ -101,12 +103,10 @@ void mux_thread(const std::vector<struct printer>& pls) {
 }
 
 int main() {
-  std::vector<struct printer> pls;
-  enum_printers2(pls);
-
+  auto pls = enum_printers2();
   for (auto& p : pls) OpenPrinter(const_cast<LPSTR>(p.name.c_str()), &p.hdl, NULL);
   auto t = std::thread(mux_thread, pls);
   t.join();
-  for (auto p : pls) ClosePrinter(p.hdl);
+  for (const auto& p : pls) ClosePrinter(p.hdl);
   return 0;
 }
