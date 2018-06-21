@@ -54,10 +54,10 @@ void test_thread(HANDLE lp, const std::string& pn) {
   pno.pTypes = &pnot;
 
   HANDLE notify = FindFirstPrinterChangeNotification(lp, PRINTER_CHANGE_JOB /*&(~PRINTER_CHANGE_SET_JOB)*/, 0, &pno);
-  std::vector<jjob> jj;
 
   for (;;) {
     DWORD reason, jid, jstat = 0;
+    std::vector<jjob> jj;
     WaitForSingleObjectEx(notify, INFINITE, TRUE);
     FindNextPrinterChangeNotification(notify, &reason, &pno, (void**)&pni);
     // std::cout << "pni->Count: " << pni->Count << std::endl;
