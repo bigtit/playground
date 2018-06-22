@@ -100,7 +100,7 @@ void mux_thread(const std::vector<struct printer>& pls) {
       // update_ui
     }
     if (reason & PRINTER_CHANGE_DELETE_JOB) {
-      std::cout << pls[idx].name << ": deletejob\n\n";
+      std::cout << pls[idx].name << ": deletejob\n";
       // update_ui
     }
     if (pni && reason & PRINTER_CHANGE_JOB) {
@@ -109,7 +109,7 @@ void mux_thread(const std::vector<struct printer>& pls) {
         if (j.stat == JOB_STATUS_PAUSED);
         // when printing, set it to JOB_CONTROL_PAUSE cannot pause the job
         // but we can delete it directly
-        if ((j.stat & JOB_STATUS_PRINTING || j.stat == 0)) {
+        if (j.stat & (JOB_STATUS_PRINTING || j.stat == 0)) {
           // too late to pause when printing
           // std::cout << "Forbidden operation\n";
           if (SetJob(pls[idx].hdl, j.id, 0, NULL, JOB_CONTROL_DELETE)) {
