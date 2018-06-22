@@ -43,8 +43,16 @@ void __stub__ del_ui() {
   return;
 }
 
-void __stub__ update_ui(int flags) {
+void __stub__ update_ui(int) {
   return;
+}
+
+bool paid = false;
+
+void resume_thread(HANDLE pid, DWORD jid) {
+  Sleep(5000);
+  SetJob(pid, jid, 0, NULL, JOB_CONTROL_RESUME);
+  // will trigger job deletion in main thread!
 }
 
 void mux_thread(const std::vector<struct printer>& pls) {
@@ -73,7 +81,7 @@ void mux_thread(const std::vector<struct printer>& pls) {
 
   for (;;) {
     std::cout << "-------------" << std::endl;
-    DWORD reason, jid, jstat = 0;
+    DWORD reason, jid = 0, jstat = 0;
     std::vector<jjob> jj;
     // WaitForSingleObjectEx(notify, INFINITE, TRUE);
     DWORD idx = WaitForMultipleObjectsEx(ps, nots, FALSE, INFINITE, TRUE);
@@ -98,9 +106,17 @@ void mux_thread(const std::vector<struct printer>& pls) {
       SetJob(pls[idx].hdl, jid, 0, NULL, JOB_CONTROL_PAUSE);
       // dealing with job adding
       // update_ui
+      for (const auto& j : jj) {
+        if (j.stat == JOB_STATUS_SPOOLING) {
+          paid = true;
+          auto t = std::thread(resume_thread, pls[idx].hdl, j.id);
+          t.join();
+        }
+      }
     }
     if (reason & PRINTER_CHANGE_DELETE_JOB) {
       std::cout << pls[idx].name << ": deletejob\n";
+      paid = false;
       // update_ui
     }
     if (pni && reason & PRINTER_CHANGE_JOB) {
@@ -109,12 +125,12 @@ void mux_thread(const std::vector<struct printer>& pls) {
         if (j.stat == JOB_STATUS_PAUSED);
         // when printing, set it to JOB_CONTROL_PAUSE cannot pause the job
         // but we can delete it directly
-        if ((j.stat & JOB_STATUS_PRINTING) || j.stat == 0) {
+        if (!paid && ((j.stat & JOB_STATUS_PRINTING) || j.stat == 0)) {
           // too late to pause when printing
           // std::cout << "Forbidden operation\n";
           if (SetJob(pls[idx].hdl, j.id, 0, NULL, JOB_CONTROL_DELETE)) {
             std::cout << "deleted jobid = " << j.id << std::endl;
-            MessageBox(0, "forbidden operation, delete current job", "error", 0);
+            // MessageBox(0, "forbidden operation, delete current job", "error", 0);
             // dealing with job deletion
           }
         }
