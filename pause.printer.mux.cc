@@ -5,6 +5,10 @@
 #include <iostream>
 #include <thread>
 
+#ifndef __stub__
+#define __stub__
+#endif
+
 struct jjob {
   DWORD id;
   DWORD stat;
@@ -32,6 +36,17 @@ auto enum_printers2() {
   return std::move(pls);
 }
 
+void __stub__ add_ui() {
+  return;
+}
+void __stub__ del_ui() {
+  return;
+}
+
+void __stub__ update_ui(int flags) {
+  return;
+}
+
 void mux_thread(const std::vector<struct printer>& pls) {
   for (auto& p : pls) std::cout << "hello: " << p.name << std::endl;
   PPRINTER_NOTIFY_INFO pni = NULL;
@@ -49,7 +64,7 @@ void mux_thread(const std::vector<struct printer>& pls) {
   // std::vector<HANDLE> nots;
   auto ps = pls.size();
   // auto nots = new HANDLE[ps];
-  HANDLE nots[255];
+  HANDLE nots[255]; // max 255 printers -> not possible
   for (size_t i = 0; i < ps; ++i) {
     // nots.push_back(FindFirstPrinterChangeNotification(p.hdl, PRINTER_CHANGE_JOB, 0, &pno));
     nots[i] = FindFirstPrinterChangeNotification(pls[i].hdl, PRINTER_CHANGE_JOB, 0, &pno);
@@ -57,11 +72,13 @@ void mux_thread(const std::vector<struct printer>& pls) {
   // std::vector<jjob> jj;
 
   for (;;) {
+    std::cout << "-------------" << std::endl;
     DWORD reason, jid, jstat = 0;
     std::vector<jjob> jj;
     // WaitForSingleObjectEx(notify, INFINITE, TRUE);
     DWORD idx = WaitForMultipleObjectsEx(ps, nots, FALSE, INFINITE, TRUE);
     HANDLE notify = nots[idx];
+    // delete nots;
     FindNextPrinterChangeNotification(notify, &reason, &pno, (void**)&pni);
     // std::cout << "pni->Count: " << pni->Count << std::endl;
     // std::cout << "reason: " << reason;
@@ -80,13 +97,15 @@ void mux_thread(const std::vector<struct printer>& pls) {
       std::cout << pls[idx].name << ": addjob\n";
       SetJob(pls[idx].hdl, jid, 0, NULL, JOB_CONTROL_PAUSE);
       // dealing with job adding
+      // update_ui
     }
     if (reason & PRINTER_CHANGE_DELETE_JOB) {
-      std::cout << pls[idx].name << ": deletejob\n";
+      std::cout << pls[idx].name << ": deletejob\n\n";
+      // update_ui
     }
-    if (pni && reason & PRINTER_CHANGE_SET_JOB) {
+    if (pni && reason & PRINTER_CHANGE_JOB) {
       for (const auto& j : jj) {
-        // std::cout << "jid = " << j.id << ", jstat = " << j.stat << ", deleted = " << j.deleted << std::endl;
+        std::cout << "jid = " << j.id << ", jstat = " << j.stat << std::endl;
         if (j.stat == JOB_STATUS_PAUSED);
         // when printing, set it to JOB_CONTROL_PAUSE cannot pause the job
         // but we can delete it directly
