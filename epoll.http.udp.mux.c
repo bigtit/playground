@@ -11,14 +11,14 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
-static int create_and_bind (char *port) {
+static int create_and_bind (char *port, int socktype) {
   struct addrinfo hints;
   struct addrinfo *result, *rp;
   int s, sfd;
 
   memset (&hints, 0, sizeof (struct addrinfo));
   hints.ai_family = AF_UNSPEC;     /* Return IPv4 and IPv6 choices */
-  hints.ai_socktype = SOCK_STREAM; /* We want a TCP socket */
+  hints.ai_socktype = socktype; /* We want a TCP socket */
   hints.ai_flags = AI_PASSIVE;     /* All interfaces */
 
   s = getaddrinfo (NULL, port, &hints, &result);
@@ -26,43 +26,35 @@ static int create_and_bind (char *port) {
     fprintf (stderr, "getaddrinfo: %s\n", gai_strerror (s));
     return -1;
   }
-
   for (rp = result; rp != NULL; rp = rp->ai_next) {
     sfd = socket (rp->ai_family, rp->ai_socktype, rp->ai_protocol);
     if (sfd == -1) continue;
 
     s = bind (sfd, rp->ai_addr, rp->ai_addrlen);
     if (s == 0) break;
-
     close (sfd);
   }
-
   if (rp == NULL) {
     fprintf (stderr, "Could not bind\n");
     return -1;
   }
-
   freeaddrinfo (result);
-
   return sfd;
 }
 
 static int make_socket_non_blocking (int sfd) {
   int flags, s;
-
   flags = fcntl (sfd, F_GETFL, 0);
   if (flags == -1) {
     perror ("fcntl");
     return -1;
   }
-
   flags |= O_NONBLOCK;
   s = fcntl (sfd, F_SETFL, flags);
   if (s == -1) {
     perror ("fcntl");
     return -1;
   }
-
   return 0;
 }
 
@@ -81,8 +73,7 @@ static const char reply[] =
 "<body>\n"
 "test\n"
 "</body>\n"
-"</html>"
-;
+"</html>";
 
 int main (int argc, char *argv[]) {
   int sfd, s;
@@ -90,12 +81,12 @@ int main (int argc, char *argv[]) {
   struct epoll_event event;
   struct epoll_event *events;
 
-  if (argc != 2) {
-    fprintf (stderr, "Usage: %s [port]\n", argv[0]);
+  if (argc != 3) {
+    fprintf (stderr, "Usage: %s [tcp port] [udp port]\n", argv[0]);
     exit (EXIT_FAILURE);
   }
 
-  sfd = create_and_bind (argv[1]);
+  sfd = create_and_bind (argv[1], SOCK_STREAM);
   if (sfd == -1) abort ();
 
   s = make_socket_non_blocking (sfd);
@@ -113,35 +104,6 @@ int main (int argc, char *argv[]) {
     abort ();
   }
 
-
-
-
-
-  // udp server setup
-  int udp_sock, udp_clientlen, udp_optval;
-  struct sockaddr_in udp_serveraddr, udp_clientaddr;
-  struct hostent* udp_hostp;
-  // char udp_buf[1024];
-  char* udp_hostaddrp;
-
-  udp_sock = socket(AF_INET, SOCK_DGRAM, 0);
-  udp_optval = 1;
-  setsockopt(udp_sock, SOL_SOCKET, SO_REUSEADDR, (const void*)&udp_optval, sizeof(int));
-  bzero((char*)&udp_serveraddr, sizeof(udp_serveraddr));
-  udp_serveraddr.sin_family = AF_INET;
-  udp_serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
-  udp_serveraddr.sin_port = htons(25000);
-  bind(udp_sock, (struct sockaddr*)&udp_serveraddr, sizeof(udp_serveraddr));
-
-  event.data.fd = udp_sock;
-  event.events = EPOLLIN | EPOLLET;
-  s = epoll_ctl (efd, EPOLL_CTL_ADD, udp_sock, &event);
-  // end udp server setup
-
-
-
-
-
   event.data.fd = sfd;
   event.events = EPOLLIN | EPOLLET;
   s = epoll_ctl (efd, EPOLL_CTL_ADD, sfd, &event);
@@ -149,6 +111,21 @@ int main (int argc, char *argv[]) {
     perror ("epoll_ctl");
     abort ();
   }
+
+  // udp server setup
+  int udp_sock, udp_clientlen;
+  struct sockaddr_in udp_clientaddr;
+  struct hostent* udp_hostp;
+  char* udp_hostaddrp;
+
+  udp_sock = create_and_bind(argv[2], SOCK_DGRAM);
+  s = make_socket_non_blocking(udp_sock);
+
+  event.data.fd = udp_sock;
+  event.events = EPOLLIN | EPOLLET;
+  s = epoll_ctl (efd, EPOLL_CTL_ADD, udp_sock, &event);
+  // end udp server setup
+
 
   /* Buffer where events are returned */
   events = calloc (MAXEVENTS, sizeof event);
