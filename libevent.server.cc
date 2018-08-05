@@ -13,34 +13,44 @@
 #define MAX_OUTPUT_BUFFER 102400
 
 
-int main() {
-  auto eb = event_base_new();
-  auto hs = evhttp_new(eb);
+int main(int argc, char** argv) {
+  if(argc!=3) {
+    std::cout << argv[0] << " [http port] [echo port]\n";
+    return -1;
+  }
+  unsigned short hport = std::stoi(argv[1]), eport = std::stoi(argv[2]);
+  auto ebm = event_base_new();
+  auto hs = evhttp_new(ebm);
   evhttp_set_allowed_methods(hs, EVHTTP_REQ_GET);
 
   auto home = [](struct evhttp_request* req, void* p) {
-    struct evbuffer* buf;
-    struct evkeyvalq hdr;
-    const char* q;
-    evhttp_parse_query(evhttp_request_get_uri(req), &hdr);
-    q = evhttp_find_header(&hdr, "q");
-    buf = evbuffer_new();
-    evbuffer_add(buf, "coucou !", 8);
-    evbuffer_add_printf(buf, "%s", q);
-    evhttp_add_header(evhttp_request_get_output_headers(req), "Content-Type", "text/plain");
+    struct evbuffer* buf = evbuffer_new();
+    if(!buf) return;
+    evbuffer_add_printf(buf, "success");
+    // evbuffer_add_printf(buf, "requested: %s\n", evhttp_request_uri(req));
     evhttp_send_reply(req, HTTP_OK, "OK", buf);
-    evhttp_clear_headers(&hdr);
     evbuffer_free(buf);
-    return;
   };
   auto notfound = [](struct evhttp_request* req, void* p) {
     evhttp_send_error(req, HTTP_NOTFOUND, "not found");
   };
-  evhttp_set_cb(hs, "/index", home, 0);
-  evhttp_set_gencb(hs, notfound, 0);
+  // evhttp_set_cb(hs, "/index", home, 0);
+  evhttp_set_gencb(hs, home, 0);
 
   // start server
-  if(evhttp_bind_socket(hs, "0.0.0.0", 5555)) perror("cannot bind to localhost:5555");
+  if(evhttp_bind_socket(hs, "0.0.0.0", hport)) perror("cannot bind to localhost");
+
+
+
+
+
+
+
+
+
+
+
+
 
   // now we want add a tcp server to eb
   auto accept_cb = [](struct evconnlistener* ls, evutil_socket_t fd, struct sockaddr* addr, int socklen, void* arg) {
@@ -48,6 +58,7 @@ int main() {
     auto read_cb = [](struct bufferevent* be, void*) {
       auto input = bufferevent_get_input(be);
       auto output = bufferevent_get_output(be);
+      // receive data until end
       for(;;) {
         size_t eol_len = 0;
         auto eol = evbuffer_search_eol(input, NULL, &eol_len, EVBUFFER_EOL_LF);
@@ -104,11 +115,24 @@ int main() {
   struct sockaddr_in sin;
   sin.sin_family = AF_INET;
   sin.sin_addr.s_addr = htonl(INADDR_ANY);
-  sin.sin_port = htons(10000);
-  auto listener = evconnlistener_new_bind(eb, accept_cb, nullptr, LEV_OPT_CLOSE_ON_FREE|LEV_OPT_REUSEABLE, -1,
+  sin.sin_port = htons(eport);
+  auto listener = evconnlistener_new_bind(ebm, accept_cb, nullptr, LEV_OPT_CLOSE_ON_FREE|LEV_OPT_REUSEABLE, -1,
                                           (struct sockaddr*)&sin, sizeof(sin));
   if(!listener) perror("cannot create tcp socket");
   evconnlistener_set_error_cb(listener, accept_error_cb);
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   // signal processing
   auto sig_cb = [](evutil_socket_t fd, short what, void* arg) {
@@ -116,13 +140,21 @@ int main() {
     std::cout << "sigint captured\n";
     event_base_loopexit(eb, NULL);
   };
-
-  // main loop
-  event_base_dispatch(eb);
-  auto evstop = evsignal_new(eb, SIGINT, sig_cb, eb);
+  auto evstop = evsignal_new(ebm, SIGINT, sig_cb, ebm);
   evsignal_add(evstop, NULL);
 
+
+
+
+
+
+
+  // main loop
+  event_base_dispatch(ebm);
+
+  // exit
+  std::cout << "done\n";
   evhttp_free(hs);
-  event_base_free(eb);
+  event_base_free(ebm);
   return 0;
 }
