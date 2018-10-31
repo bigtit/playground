@@ -24,6 +24,11 @@ int guess2(int t) {
   return c;
 }
 // double version, few differences
+// note that the value estimated is always smaller than target
+// because we start from smaller values and add an exponential decreased offset
+// if we want the estimated value greater than target value
+// we can start from the greater one (start from j = g instead of g/2)
+// then minus m in the last for loop until the threshold (diff) meets
 int guessd(double t) {
   double g = 1.0f;
   size_t c = 0;
