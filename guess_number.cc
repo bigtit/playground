@@ -27,11 +27,12 @@ int guess2(int t) {
 int guessd(double t) {
   double g = 1.0f;
   size_t c = 0;
+  double diff = 1e-3;
   // make sure g>t and g/2<t
   for(; g<t; ++c, g*=2) { std::cout << g << std::endl; }
   for(; g/2>t; ++c, g/=2) { std::cout << g << std::endl; }
   double j = g/2, m = g/4;
-  for(; 1e-4<m && g-j>1e-4; ++c, m/=2) {
+  for(; diff<m/g && (g-j)/g>diff; ++c, m/=2) {
     std::cout << j+m << std::endl;
     if(j+m<t) j += m;
   }
