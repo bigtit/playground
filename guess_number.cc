@@ -33,15 +33,16 @@ int binary_check(const check_seq& ccq, int n) {
 // simple but clearer
 int guess(const int t) {
   int g = 100, p = 0; // g cannot be random number to begin guessing
-  while(g > 0) {
+  while(g-p) {
     if(g == t) return g;
-    else {
-      if(g < t) {
-        p = g;
-        g *= 2;
-      } else g = (p+g+1)/2;
-      std::cout << "guess: " << g << std::endl;
+    else if(g < t) {
+      if(p < g) g*=2;
+      else g = (p+g+1)/2;
+    } else {
+      if(p < g) g = (p+g+1)/2;
+      else g = (3*g-p)/2;
     }
+    std::cout << "guess: " << g << std::endl;
   }
   return -1;
 }
