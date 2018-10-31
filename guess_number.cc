@@ -29,7 +29,7 @@ int guessd(double t) {
   size_t c = 0;
   // make sure g>t and g/2<t
   for(; g<t; ++c, g*=2) { std::cout << g << std::endl; }
-  for(; g/2>t; ++c, g*=2) { std::cout << g << std::endl; }
+  for(; g/2>t; ++c, g/=2) { std::cout << g << std::endl; }
   double j = g/2, m = g/4;
   for(; 1e-4<m && g-j>1e-4; ++c, m/=2) {
     std::cout << j+m << std::endl;
