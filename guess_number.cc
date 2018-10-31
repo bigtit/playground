@@ -36,7 +36,7 @@ int guess(const int t) {
   for(;;) {
     if(g == t) return g;
     else if(g < t) {
-      if(p < g) g = 2*g-p;
+      if(p < g) g = (3*g-p)/2;
       else g = (p+g+1)/2;
     } else {
       if(p < g) g = (p+g+1)/2;
