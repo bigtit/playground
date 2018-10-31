@@ -1,38 +1,44 @@
 #include <iostream>
-#include <vector>
 
-// the procedure can be abstract as a guess number game:
-// find out the number by just a unidirectional comparison which only returns true or false
+int guess(int t, int n) {
+  if(t>n) return -1;
+  int i = 0, j = n/2, m = n/4;
 
-// check_seq(n) means for an action seq from number 0 to n-1
-// if the critical action number num is under n,
-// we will do check_seq(n/2)
-class check_seq {
-  int num; // internal
-public:
-  check_seq(int n): num(n) { }
-  bool operator()(int n) const { return num < n; }
-};
-
-// input n: seq number 0 to n-1
-// return the num inside ccq
-int binary_check(const check_seq& ccq, int n) {
-  if(!ccq(n)) return -1;
-  int i = 0, j = 0, m = n; // offset
-  // need round
-  while(1<m && j<n) {
-    m = (m+1)/2;
-    if(!ccq(j+m)) j += m;
-    ++i;
-    std::cout << "m=" << m << ", " << "j=" << j << std::endl;
+  for(; 1<m && j<n; ++i, m=(m+1)/2) {
+    std::cout << j+m << std::endl;
+    if(j+m<t) j += m;
   }
-  if(1==m || j==n) return j;
+  if(1==m || j==n) {
+    std::cout << j+m << std::endl;
+    return i;
+  }
   return -1;
 }
+int guess2(int t) {
+  int g = 1;
+  size_t c = 0;
+  for(; g<t; ++c, g*=2) { std::cout << g << std::endl; }
+  std::cout << g << std::endl << std::endl;
+  c += guess(t, g);
 
-int main(int argc, char** argv) {
-  check_seq ccq(6553);
-  int r = binary_check(ccq, 69535);
-  std::cout << "result:" << r << std::endl;
+  return c;
+}
+// double version, few differences
+int guessd(double t) {
+  double g = 1.0f;
+  size_t c = 0;
+  for(; g<t; ++c, g*=2) { std::cout << g << std::endl; }
+  double j = g/2, m = g/4;
+  for(; 1e-4<m && g-j>1e-4; ++c, m/=2) {
+    std::cout << j+m << std::endl;
+    if(j+m<t) j += m;
+  }
+  std::cout << j+m << std::endl;
+  return c;
+}
+
+int main() {
+  std::cout << guess2(635343535) << std::endl;;
+  std::cout << guessd(54.3453) << std::endl;
   return 0;
 }
