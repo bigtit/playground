@@ -32,8 +32,8 @@ int binary_check(const check_seq& ccq, int n) {
 
 // simple but clearer
 int guess(const int t) {
-  int g = 100, p = 0; // g cannot be random number to begin guessing
-  while(g-p) {
+  int g = 100, p = 0; // g can be a random number to begin
+  for(;;) {
     if(g == t) return g;
     else if(g < t) {
       if(p < g) g*=2;
