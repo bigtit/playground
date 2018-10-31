@@ -30,32 +30,9 @@ int binary_check(const check_seq& ccq, int n) {
   return -1;
 }
 
-// simple but clearer
-int guess(const int t) {
-  int g = 100, p = 0; // g can be a random number to begin
-  for(;;) {
-    auto s = g; // save old g
-    if(g == t) return g;
-    else if(g < t) {
-      if(p < g) g = 2*g-p;
-      else {
-        g = (p+g+1)/2;
-        p = s;
-      }
-    } else {
-      if(p < g) g = (p+g+1)/2;
-      else g = (3*g-p)/2;
-      p = s;
-    }
-    std::cout << g << std::endl;
-  }
-  return -1;
-}
-
 int main(int argc, char** argv) {
   check_seq ccq(6553);
   int r = binary_check(ccq, 69535);
   std::cout << "result:" << r << std::endl;
-  std::cout << "result simple: << guess(2222) << std::endl;
   return 0;
 }
